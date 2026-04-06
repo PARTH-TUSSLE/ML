@@ -77,3 +77,22 @@ print(f"Sequence: {seq}")
 lin = torch.linspace(0, 1, 5)  # 5 values from 0 to 1
 print(f"Linspace: {lin}")
 
+# TRANSFORMATIONS
+# A vector pointing right
+v = torch.tensor([1.0, 0.0])
+print(f"Original vector: {v.tolist()}")
+
+# Rotation matrix (90 degrees counterclockwise)
+rotate_90 = torch.tensor([[0., -1.],
+                           [1.,  0.]])
+
+rotated = rotate_90 @ v
+print(f"After 90° rotation: {rotated.tolist()}")  # [0, 1] → pointing up!
+
+# Rotation matrix (45 degrees)
+angle = math.radians(45)
+rotate_45 = torch.tensor([[math.cos(angle), -math.sin(angle)],
+                           [math.sin(angle),  math.cos(angle)]])
+
+rotated_45 = rotate_45 @ v
+print(f"After 45° rotation: [{rotated_45[0]:.3f}, {rotated_45[1]:.3f}]") #Take this number and show it as a float with 3 decimal places
