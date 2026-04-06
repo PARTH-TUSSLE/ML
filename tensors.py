@@ -59,3 +59,21 @@ tensor_4d = torch.zeros(8, 12, 3, 64)
 print(f"4D Tensor shape: {tensor_4d.shape}")    # [8, 12, 3, 64]
 print(f"  That's: 8 sentences × 12 heads × 3 tokens × 64 dims")
 
+# Zeros and ones
+z = torch.zeros(3, 4)        # 3×4 matrix of zeros
+o = torch.ones(2, 5)         # 2×5 matrix of ones
+
+# Random (normal distribution) — this is how weights start!
+r = torch.randn(3, 3)        # random values, mean=0, std=1
+print("Random matrix (this is how neural network weights begin):")
+print(r)
+print()
+
+# From a range
+seq = torch.arange(0, 10)    # [0, 1, 2, ..., 9]
+print(f"Sequence: {seq}")
+
+# Linspace — evenly spaced
+lin = torch.linspace(0, 1, 5)  # 5 values from 0 to 1
+print(f"Linspace: {lin}")
+
