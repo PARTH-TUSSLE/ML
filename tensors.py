@@ -241,6 +241,24 @@ y3.backward()
 print(f"After zero + backward: x.grad = {x.grad}")  # 6.0 — fresh!
 
 
+
+
+#Disabling gradients
+# option 1 - requires_grad_(False)
+# option 2 - detach()
+# option 3 - torch.no_grad()
+
+x.requires_grad_(False)
+
+z = x.detach()
+
+with torch.no_grad():
+    w -= lr * w.grad
+    b -= lr * b.grad
+
+
+
+
 #CPU vs GPU
 
 sizes = [100, 500, 1000, 2000, 4000]
