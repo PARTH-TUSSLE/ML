@@ -165,9 +165,7 @@ print(f"  Speedup:      {slow_time/fast_time:.0f}x faster! 🚀")
 print()
 
 
-
 #GPU Power
-
 
 
 x = torch.randn(3, 4)
@@ -179,3 +177,161 @@ print(f"\nAfter view(4, 3):")
 print(f"Shape: {y.shape}")
 print(f"Data pointer: {y.data_ptr()}")  # SAME pointer!
 print(f"\nSame memory? {x.data_ptr() == y.data_ptr()}")  # True!
+
+
+
+#RESHAPING
+
+
+# 1. Tensor internals
+x = torch.randn(3, 4)
+print(f"Shape: {x.shape}")
+print(f"Stride: {x.stride()}")
+print(f"Is contiguous: {x.is_contiguous()}")
+print(f"Data pointer: {x.data_ptr()}")
+
+y = x.view(4, 3)
+print(f"\nReshaped — same memory? {x.data_ptr() == y.data_ptr()}")
+
+z = x.T  # transpose
+print(f"Transposed — contiguous? {z.is_contiguous()}")
+print(f"Transposed stride: {z.stride()}")  # reversed!
+
+
+
+
+#RequireGrad
+
+
+
+# 2. The computation graph — peek at it
+x = torch.tensor(3.0, requires_grad=True)
+y = x ** 2
+z = y + 2 * x + 1
+
+print(f"z = {z.item()}")
+print(f"z was created by: {z.grad_fn}")           # AddBackward
+print(f"  which came from: {z.grad_fn.next_functions}")
+print(f"y was created by: {y.grad_fn}")            # PowBackward
+print(f"\n☝️ PyTorch recorded every operation!")
+print("When you call z.backward(), it walks this chain in reverse.")
+
+
+
+
+# 3. Gradient accumulation — the gotcha
+
+
+
+x = torch.tensor(3.0, requires_grad=True)
+
+y1 = x ** 2
+y1.backward()
+print(f"After first backward: x.grad = {x.grad}")   # 6.0
+
+# x.grad.zero_() -> add this line to not accummulate the gradients
+y2 = x ** 2
+y2.backward()
+print(f"After second backward: x.grad = {x.grad}")  # 12.0! Accumulated!
+
+# This is why we call zero_grad()
+x.grad.zero_()
+y3 = x ** 2
+y3.backward()
+print(f"After zero + backward: x.grad = {x.grad}")  # 6.0 — fresh!
+
+
+#CPU vs GPU
+
+sizes = [100, 500, 1000, 2000, 4000]
+cpu_times = []
+gpu_times = []
+
+for size in sizes:
+    A_cpu = torch.randn(size, size)
+    B_cpu = torch.randn(size, size)
+
+    # CPU timing
+    start = time.time()
+    for _ in range(5):
+        _ = A_cpu @ B_cpu
+    cpu_time = (time.time() - start) / 5
+
+    if torch.cuda.is_available():
+        A_gpu = A_cpu.to('cuda')
+        B_gpu = B_cpu.to('cuda')
+
+        # Warmup
+        _ = A_gpu @ B_gpu
+        torch.cuda.synchronize()
+
+        # GPU timing
+        start = time.time()
+        for _ in range(5):
+            _ = A_gpu @ B_gpu
+        torch.cuda.synchronize()
+        gpu_time = (time.time() - start) / 5
+    else:
+        gpu_time = float('nan')
+
+    cpu_times.append(cpu_time * 1000)
+    gpu_times.append(gpu_time * 1000)
+
+    speedup = cpu_time / gpu_time if gpu_time > 0 else 0
+    print(f"Size {size:>5}×{size:<5} | CPU: {cpu_time*1000:>8.2f}ms | GPU: {gpu_time*1000:>8.2f}ms | Speedup: {speedup:>6.1f}x")
+
+# Plot it
+if torch.cuda.is_available():
+    fig, ax = plt.subplots(figsize=(10, 5))
+    x_pos = range(len(sizes))
+    ax.bar([i - 0.2 for i in x_pos], cpu_times, 0.35, label='CPU', color='#3b82f6')
+    ax.bar([i + 0.2 for i in x_pos], gpu_times, 0.35, label='GPU', color='#ef4444')
+    ax.set_xticks(list(x_pos))
+    ax.set_xticklabels([f"{s}×{s}" for s in sizes])
+    ax.set_ylabel('Time (ms)')
+    ax.set_title('Matrix Multiplication: CPU vs GPU', fontweight='bold', fontsize=14)
+    ax.legend()
+    ax.set_yscale('log')
+    plt.tight_layout()
+    plt.show()
+    print("\n☝️ This is why NVIDIA is worth trillions.")
+
+
+
+
+# Basic math — element-wise
+
+
+
+
+a = torch.tensor([1.0, 2.0, 3.0])
+b = torch.tensor([4.0, 5.0, 6.0])
+
+print("Element-wise operations:")
+print(f"  a + b = {a + b}")
+print(f"  a * b = {a * b}")      # element-wise multiply
+print(f"  a @ b = {a @ b}")      # dot product!
+print()
+
+# Broadcasting in action
+matrix = torch.tensor([[1.0, 2.0, 3.0],
+                        [4.0, 5.0, 6.0]])
+bias = torch.tensor([10.0, 20.0, 30.0])
+
+result = matrix + bias  # bias gets added to EVERY row
+print("Broadcasting:")
+print(f"  Matrix shape: {matrix.shape}")
+print(f"  Bias shape:   {bias.shape}")
+print(f"  Result:\n{result}")
+print("  ☝️ Bias was added to both rows automatically!")
+print()
+
+# Useful operations
+x = torch.randn(3, 4)
+print(f"Random tensor:\n{x}\n")
+print(f"  Mean:    {x.mean():.4f}")
+print(f"  Std:     {x.std():.4f}")
+print(f"  Max:     {x.max():.4f}")
+print(f"  Argmax:  {x.argmax()} (index of largest element)")
+print(f"  Softmax: {torch.softmax(x[0], dim=0)}")
+print(f"  ☝️ Softmax turns values into probabilities (sums to 1)")
